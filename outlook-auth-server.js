@@ -300,6 +300,14 @@ server.listen(PORT, () => {
   }
 });
 
+// Exit when parent process closes stdin — prevents orphan on crash
+process.stdin.resume();
+process.stdin.on('end', () => {
+  console.log('Parent process closed stdin — shutting down auth server');
+  server.close();
+  process.exit(0);
+});
+
 // Handle termination
 process.on('SIGINT', () => {
   console.log('Authentication server shutting down');

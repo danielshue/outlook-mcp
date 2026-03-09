@@ -2,7 +2,16 @@
  * Authentication-related tools for the Outlook MCP server
  */
 const config = require('../config');
-const tokenManager = require('./token-manager');
+const TokenStorage = require('./token-storage');
+
+// Shared singleton with credentials from main config
+const tokenStorage = new TokenStorage({
+  clientId: config.AUTH_CONFIG.clientId,
+  clientSecret: config.AUTH_CONFIG.clientSecret,
+  tokenStorePath: config.AUTH_CONFIG.tokenStorePath,
+  redirectUri: config.AUTH_CONFIG.redirectUri,
+  scopes: ['offline_access', ...config.AUTH_CONFIG.scopes],
+});
 
 /**
  * About tool handler
@@ -28,7 +37,12 @@ async function handleAuthenticate(args) {
   // For test mode, create a test token
   if (config.USE_TEST_MODE) {
     // Create a test token with a 1-hour expiry
-    tokenManager.createTestTokens();
+    const testTokens = {
+      access_token: "test_access_token_" + Date.now(),
+      refresh_token: "test_refresh_token_" + Date.now(),
+      expires_at: Date.now() + (3600 * 1000)
+    };
+    await tokenStorage._saveTokensToFile?.() || require('./token-manager').createTestTokens();
     
     return {
       content: [{
@@ -56,7 +70,7 @@ async function handleAuthenticate(args) {
 async function handleCheckAuthStatus() {
   console.error('[CHECK-AUTH-STATUS] Starting authentication status check');
   
-  const tokens = tokenManager.loadTokenCache();
+  const tokens = await tokenStorage.getTokens();
   
   console.error(`[CHECK-AUTH-STATUS] Tokens loaded: ${tokens ? 'YES' : 'NO'}`);
   

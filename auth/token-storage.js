@@ -121,6 +121,8 @@ class TokenStorage {
     }
 
     console.log('Attempting to refresh access token...');
+    console.log(`[TokenStorage] clientId: ${this.config.clientId ? this.config.clientId.substring(0, 8) + '...' : 'EMPTY'}, clientSecret: ${this.config.clientSecret ? '***(' + this.config.clientSecret.length + ' chars)' : 'EMPTY'}`);
+    console.log(`[TokenStorage] tokenEndpoint: ${this.config.tokenEndpoint}`);
     const postData = querystring.stringify({
       client_id: this.config.clientId,
       client_secret: this.config.clientSecret,
