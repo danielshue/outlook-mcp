@@ -155,12 +155,20 @@ class TokenStorage {
     console.log('Attempting to refresh access token...');
     console.log(`[TokenStorage] clientId: ${this.config.clientId ? this.config.clientId.substring(0, 8) + '...' : 'EMPTY'}, clientSecret: ${this.config.clientSecret ? '***(' + this.config.clientSecret.length + ' chars)' : 'EMPTY'}`);
     console.log(`[TokenStorage] tokenEndpoint: ${this.config.tokenEndpoint}`);
+
+    // Use the scopes that were actually granted by Microsoft during auth,
+    // not the config scopes — a mismatch causes AADSTS70000 invalid_grant.
+    const refreshScopes = this.tokens.scope
+      ? `offline_access ${this.tokens.scope}`
+      : this.config.scopes.join(' ');
+    console.log(`[TokenStorage] refresh scopes: ${refreshScopes}`);
+
     const postData = querystring.stringify({
       client_id: this.config.clientId,
       client_secret: this.config.clientSecret,
       grant_type: 'refresh_token',
       refresh_token: this.tokens.refresh_token,
-      scope: this.config.scopes.join(' ')
+      scope: refreshScopes
     });
 
     const requestOptions = {
