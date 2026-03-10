@@ -80,6 +80,23 @@ class TokenStorage {
     return Date.now() >= (this.tokens.expires_at - this.config.refreshTokenBuffer);
   }
 
+  /**
+   * Checks whether the token should be proactively refreshed.
+   * Returns true when more than half the token lifetime has elapsed,
+   * allowing refresh well before Microsoft revokes the refresh token.
+   * @returns {boolean}
+   */
+  shouldProactivelyRefresh() {
+    if (!this.tokens || !this.tokens.expires_at || !this.tokens.expires_in) {
+      return false;
+    }
+    const lifetimeMs = this.tokens.expires_in * 1000;
+    const issuedAt = this.tokens.expires_at - lifetimeMs;
+    const elapsed = Date.now() - issuedAt;
+    // Refresh once past 50% of the token's lifetime
+    return elapsed >= (lifetimeMs * 0.5);
+  }
+
   async getValidAccessToken() {
     await this.getTokens(); // Ensure tokens are loaded
 
@@ -107,6 +124,20 @@ class TokenStorage {
         return null;
       }
     }
+
+    // Proactive refresh: if past 50% of token lifetime, refresh now while
+    // the refresh token is still valid (don't wait for near-expiry)
+    if (this.shouldProactivelyRefresh() && this.tokens.refresh_token) {
+      const remaining = Math.round((this.tokens.expires_at - Date.now()) / 60000);
+      console.log(`Proactive token refresh: ${remaining} min remaining, refreshing early.`);
+      try {
+        return await this.refreshAccessToken();
+      } catch (proactiveError) {
+        // Proactive refresh failed — token is still valid, just return it
+        console.warn('Proactive refresh failed, using existing token:', proactiveError.message);
+      }
+    }
+
     return this.tokens.access_token;
   }
 
