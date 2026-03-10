@@ -465,55 +465,57 @@ describe('TokenStorage', () => {
         expect(token).toBe('refreshed_token_from_spy');
     });
 
-    it('should return null and clear tokens if refresh fails', async () => {
+    it('should return null and preserve refresh_token if refresh fails', async () => {
         tokenStorage.tokens = {
             access_token: 'expired_token_will_fail',
             refresh_token: 'will_fail_refresh',
             expires_at: Date.now() - 1000
         };
         jest.spyOn(tokenStorage, 'refreshAccessToken').mockRejectedValue(new Error('Refresh failed'));
-        const saveSpy = jest.spyOn(tokenStorage, '_saveTokensToFile');
+        const saveSpy = jest.spyOn(tokenStorage, '_saveTokensToFile').mockResolvedValue(undefined);
 
         const token = await tokenStorage.getValidAccessToken();
         expect(token).toBeNull();
-        expect(tokenStorage.tokens).toBeNull(); // Tokens should be invalidated
-        expect(saveSpy).toHaveBeenCalled(); // Invalidation should be persisted
+        expect(tokenStorage.tokens).not.toBeNull(); // Tokens preserved
+        expect(tokenStorage.tokens.refresh_token).toBe('will_fail_refresh'); // Refresh token kept
+        expect(tokenStorage.tokens.access_token).toBeNull(); // Access token cleared
+        expect(tokenStorage.tokens.expires_at).toBe(0); // Expiry reset
+        expect(saveSpy).toHaveBeenCalled(); // Partial invalidation persisted
     });
 
-    it('should propagate error if saving nulled token fails after refresh failure', async () => {
+    it('should propagate error if saving partial token fails after refresh failure', async () => {
         tokenStorage.tokens = { access_token: 'expired_token_save_fail', refresh_token: 'refresh_me', expires_at: Date.now() - 1000 };
         jest.spyOn(tokenStorage, 'refreshAccessToken').mockRejectedValue(new Error('Refresh API down'));
         const saveError = new Error('Disk write error during null save');
-        jest.spyOn(tokenStorage, '_saveTokensToFile').mockRejectedValueOnce(saveError); // This is key
+        jest.spyOn(tokenStorage, '_saveTokensToFile').mockRejectedValueOnce(saveError);
 
         await expect(tokenStorage.getValidAccessToken()).rejects.toThrow(saveError);
-        expect(tokenStorage.tokens).toBeNull(); // Still nulled in memory
+        expect(tokenStorage.tokens).not.toBeNull(); // Tokens partially cleared, not fully nulled
+        expect(tokenStorage.tokens.refresh_token).toBe('refresh_me'); // Refresh token preserved
     });
 
-    it('should return null and clear tokens if expired and no refresh token', async () => {
+    it('should return null if expired and no refresh token', async () => {
         tokenStorage.tokens = {
             access_token: 'expired_no_refresh',
             expires_at: Date.now() - 1000
             // No refresh_token
         };
-        const saveSpy = jest.spyOn(tokenStorage, '_saveTokensToFile').mockResolvedValue(true); // Assume save works for this path
+        const saveSpy = jest.spyOn(tokenStorage, '_saveTokensToFile');
         const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
         const token = await tokenStorage.getValidAccessToken();
         expect(token).toBeNull();
         expect(consoleWarnSpy).toHaveBeenCalledWith('No refresh token available. Cannot refresh access token.');
-        expect(tokenStorage.tokens).toBeNull();
-        expect(saveSpy).toHaveBeenCalled();
+        // Tokens are NOT destroyed — just returns null without saving
+        expect(saveSpy).not.toHaveBeenCalled();
         consoleWarnSpy.mockRestore();
     });
 
-    it('should propagate error if saving nulled token fails (no refresh token path)', async () => {
+    it('should not throw if expired and no refresh token (no save attempt)', async () => {
         tokenStorage.tokens = { access_token: 'expired_no_refresh_save_fail', expires_at: Date.now() - 1000 };
-        const saveError = new Error('Disk write error during null save (no-refresh path)');
-        jest.spyOn(tokenStorage, '_saveTokensToFile').mockRejectedValueOnce(saveError);
 
-        await expect(tokenStorage.getValidAccessToken()).rejects.toThrow(saveError);
-        expect(tokenStorage.tokens).toBeNull(); // Still nulled in memory
+        const token = await tokenStorage.getValidAccessToken();
+        expect(token).toBeNull();
     });
 
     it('should return null if no tokens are loaded initially', async () => {

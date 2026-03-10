@@ -70,24 +70,36 @@ async function handleAuthenticate(args) {
 async function handleCheckAuthStatus() {
   console.error('[CHECK-AUTH-STATUS] Starting authentication status check');
   
-  const tokens = await tokenStorage.getTokens();
-  
-  console.error(`[CHECK-AUTH-STATUS] Tokens loaded: ${tokens ? 'YES' : 'NO'}`);
-  
-  if (!tokens || !tokens.access_token) {
-    console.error('[CHECK-AUTH-STATUS] No valid access token found');
+  // Use getValidAccessToken() which checks expiry AND attempts refresh,
+  // rather than getTokens() which only loads from file without validation.
+  try {
+    const accessToken = await tokenStorage.getValidAccessToken();
+    
+    if (!accessToken) {
+      console.error('[CHECK-AUTH-STATUS] No valid access token available (expired or missing)');
+      const tokens = await tokenStorage.getTokens();
+      const hasRefresh = tokens && tokens.refresh_token;
+      return {
+        content: [{ type: "text", text: hasRefresh
+          ? "Not authenticated — token expired, refresh failed. Re-authenticate to restore access."
+          : "Not authenticated — no refresh token. Interactive re-authentication required." }]
+      };
+    }
+    
+    const expiresAt = tokenStorage.getExpiryTime();
+    const remainingMs = expiresAt - Date.now();
+    const remainingMin = Math.round(remainingMs / 60000);
+    console.error(`[CHECK-AUTH-STATUS] Valid token, expires in ${remainingMin} min`);
+    
     return {
-      content: [{ type: "text", text: "Not authenticated" }]
+      content: [{ type: "text", text: `Authenticated and ready (token valid for ~${remainingMin} min)` }]
+    };
+  } catch (error) {
+    console.error('[CHECK-AUTH-STATUS] Error checking auth:', error);
+    return {
+      content: [{ type: "text", text: `Authentication error: ${error.message}` }]
     };
   }
-  
-  console.error('[CHECK-AUTH-STATUS] Access token present');
-  console.error(`[CHECK-AUTH-STATUS] Token expires at: ${tokens.expires_at}`);
-  console.error(`[CHECK-AUTH-STATUS] Current time: ${Date.now()}`);
-  
-  return {
-    content: [{ type: "text", text: "Authenticated and ready" }]
-  };
 }
 
 // Tool definitions

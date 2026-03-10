@@ -95,14 +95,15 @@ class TokenStorage {
           return await this.refreshAccessToken();
         } catch (refreshError) {
           console.error('Failed to refresh access token:', refreshError);
-          this.tokens = null; // Invalidate tokens on refresh failure
-          await this._saveTokensToFile(); // Persist invalidation
+          // Preserve refresh_token so the next call can retry.
+          // Only clear the expired access_token — do NOT null the whole object.
+          this.tokens.access_token = null;
+          this.tokens.expires_at = 0;
+          await this._saveTokensToFile();
           return null;
         }
       } else {
         console.warn('No refresh token available. Cannot refresh access token.');
-        this.tokens = null; // Invalidate tokens as they are expired and cannot be refreshed
-        await this._saveTokensToFile(); // Persist invalidation
         return null;
       }
     }
