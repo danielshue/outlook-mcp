@@ -20,7 +20,7 @@ module.exports = {
     clientId: process.env.OUTLOOK_CLIENT_ID || process.env.MS_CLIENT_ID || '',
     clientSecret: process.env.OUTLOOK_CLIENT_SECRET || process.env.MS_CLIENT_SECRET || '',
     redirectUri: 'http://localhost:3333/auth/callback',
-    scopes: ['Mail.Read', 'Mail.ReadWrite', 'Mail.Send', 'User.Read', 'Calendars.Read', 'Calendars.ReadWrite'],
+    scopes: ['Mail.Read', 'Mail.ReadWrite', 'Mail.Send', 'User.Read', 'Calendars.Read', 'Calendars.ReadWrite', 'Contacts.Read', 'Contacts.ReadWrite'],
     tokenStorePath: path.join(homeDir, '.outlook-mcp-tokens.json'),
     authServerUrl: 'http://localhost:3333'
   },
@@ -37,7 +37,11 @@ module.exports = {
   
   // Calendar constants
   CALENDAR_SELECT_FIELDS: 'id,subject,bodyPreview,start,end,location,organizer,attendees,isAllDay,isCancelled',
-  
+
+  // Contact constants
+  CONTACT_SELECT_FIELDS: 'id,displayName,givenName,surname,emailAddresses,businessPhones,mobilePhone,companyName,jobTitle',
+  CONTACT_DETAIL_FIELDS: 'id,displayName,givenName,surname,middleName,emailAddresses,businessPhones,mobilePhone,homePhones,companyName,jobTitle,department,businessAddress,homeAddress,otherAddress,birthday,personalNotes,categories',
+
   // Pagination
   DEFAULT_PAGE_SIZE: 25,
   MAX_RESULT_COUNT: 50,

@@ -24,6 +24,14 @@ Certified by MCPHub https://mcphub.com/mcp-servers/ryaker/outlook-mcp
 │   ├── accept.js            # Accept event
 │   ├── tentative.js         # Tentatively accept event
 │   ├── decline.js           # Decline event
+├── contacts/                # Contact management
+│   ├── index.js             # Contact exports
+│   ├── list.js              # List contacts
+│   ├── search.js            # Search contacts
+│   ├── read.js              # Read contact details
+│   ├── create.js            # Create contact
+│   ├── update.js            # Update contact
+│   └── delete.js            # Delete contact
 ├── email/                   # Email functionality
 │   ├── index.js             # Email exports
 │   ├── list.js              # List emails
@@ -41,6 +49,7 @@ Certified by MCPHub https://mcphub.com/mcp-servers/ryaker/outlook-mcp
 - **Authentication**: OAuth 2.0 authentication with Microsoft Graph API
 - **Email Management**: List, search, read, and send emails
 - **Calendar Management**: List, create, accept, decline, and delete calendar events
+- **Contact Management**: List, search, read, create, update, and delete contacts
 - **Modular Structure**: Clean separation of concerns for better maintainability
 - **OData Filter Handling**: Proper escaping and formatting of OData queries
 - **Test Mode**: Simulated responses for testing without real API calls
@@ -102,6 +111,7 @@ To use this MCP server you need to first register and configure an app in Azure 
     - Calendars.Read
     - Calendars.ReadWrite
     - Contacts.Read
+    - Contacts.ReadWrite
 6. Click on "Add permissions"
 
 ### Client Secret
