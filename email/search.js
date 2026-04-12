@@ -97,21 +97,13 @@ async function progressiveSearch(endpoint, accessToken, searchTerms, filterTerms
         console.error(`Attempting search with only ${term}: "${searchTerms[term]}"`);
         searchAttempts.push(`single-term-${term}`);
         
-        // For single term search, only use $search with that term
         const simplifiedParams = {
           $top: Math.min(50, maxCount),
           $select: config.EMAIL_SELECT_FIELDS,
-          $orderby: 'receivedDateTime desc'
         };
         
-        // Add the search term in the appropriate KQL syntax
-        if (term === 'query') {
-          // General query doesn't need a prefix
-          simplifiedParams.$search = `"${searchTerms[term]}"`;
-        } else {
-          // Specific field searches use field:value syntax
-          simplifiedParams.$search = `${term}:"${searchTerms[term]}"`;
-        }
+        // All terms go through $search as quoted strings (Graph API /messages doesn't support KQL field:value)
+        simplifiedParams.$search = `"${searchTerms[term]}"`;
         
         // Add boolean filters if applicable
         addBooleanFilters(simplifiedParams, filterTerms);
@@ -185,35 +177,26 @@ function buildSearchParams(searchTerms, filterTerms, count) {
   const params = {
     $top: count,
     $select: config.EMAIL_SELECT_FIELDS,
-    $orderby: 'receivedDateTime desc'
   };
   
-  // Handle search terms
-  const kqlTerms = [];
+  // MS Graph /messages $search uses simple quoted strings (not KQL field:value).
+  // Combine all text terms into a single $search query.
+  const searchParts = [];
   
-  if (searchTerms.query) {
-    // General query doesn't need a prefix
-    kqlTerms.push(searchTerms.query);
+  if (searchTerms.query) searchParts.push(searchTerms.query);
+  if (searchTerms.subject) searchParts.push(searchTerms.subject);
+  if (searchTerms.from) searchParts.push(searchTerms.from);
+  if (searchTerms.to) searchParts.push(searchTerms.to);
+  
+  if (searchParts.length > 0) {
+    // $search and $orderby cannot be combined on the messages endpoint
+    params.$search = `"${searchParts.join(' ')}"`;
+  } else {
+    // No search terms — just list recent, so $orderby is allowed
+    params.$orderby = 'receivedDateTime desc';
   }
   
-  if (searchTerms.subject) {
-    kqlTerms.push(`subject:"${searchTerms.subject}"`);
-  }
-  
-  if (searchTerms.from) {
-    kqlTerms.push(`from:"${searchTerms.from}"`);
-  }
-  
-  if (searchTerms.to) {
-    kqlTerms.push(`to:"${searchTerms.to}"`);
-  }
-  
-  // Add $search if we have any search terms
-  if (kqlTerms.length > 0) {
-    params.$search = kqlTerms.join(' ');
-  }
-  
-  // Add boolean filters
+  // Add boolean filters (these are safe with $search)
   addBooleanFilters(params, filterTerms);
   
   return params;

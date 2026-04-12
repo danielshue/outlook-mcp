@@ -1,11 +1,23 @@
 /**
  * Configuration for Outlook MCP Server
  */
+const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const dotenv = require('dotenv');
+
+// Load local environment files from the repository root.
+for (const envFile of [path.join(__dirname, '.env.local'), path.join(__dirname, '.env')]) {
+  if (fs.existsSync(envFile)) {
+    dotenv.config({ path: envFile, override: false });
+  }
+}
 
 // Ensure we have a home directory path even if process.env.HOME is undefined
 const homeDir = process.env.HOME || process.env.USERPROFILE || os.homedir() || '/tmp';
+const redirectUri = process.env.M365_REDIRECT_URI || 'http://localhost:3333/auth/callback';
+const authServerUrl = new URL(redirectUri).origin;
+const authScopes = (process.env.M365_SCOPES || 'offline_access User.Read Mail.Read Mail.ReadWrite Mail.Send Calendars.Read Calendars.ReadWrite Files.Read Files.ReadWrite').split(' ');
 
 module.exports = {
   // Server information
@@ -17,12 +29,14 @@ module.exports = {
   
   // Authentication configuration
   AUTH_CONFIG: {
-    clientId: process.env.OUTLOOK_CLIENT_ID || '',
-    clientSecret: process.env.OUTLOOK_CLIENT_SECRET || '',
-    redirectUri: 'http://localhost:3333/auth/callback',
-    scopes: ['Mail.Read', 'Mail.ReadWrite', 'Mail.Send', 'User.Read', 'Calendars.Read', 'Calendars.ReadWrite', 'Files.Read', 'Files.ReadWrite'],
+    clientId: process.env.M365_CLIENT_ID || '',
+    clientSecret: process.env.M365_CLIENT_SECRET || '',
+    redirectUri,
+    scopes: authScopes,
     tokenStorePath: path.join(homeDir, '.outlook-mcp-tokens.json'),
-    authServerUrl: 'http://localhost:3333'
+    authServerUrl,
+    authEndpoint: process.env.M365_AUTH_ENDPOINT || 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+    tokenEndpoint: process.env.M365_TOKEN_ENDPOINT || 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
   },
   
   // Microsoft Graph API

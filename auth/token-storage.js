@@ -5,13 +5,19 @@ const querystring = require('querystring');
 
 class TokenStorage {
   constructor(config) {
+    const resolvedClientId = process.env.M365_CLIENT_ID;
+    const resolvedClientSecret = process.env.M365_CLIENT_SECRET;
+    const resolvedRedirectUri = process.env.M365_REDIRECT_URI || 'http://localhost:3333/auth/callback';
+    const resolvedScopes = (process.env.M365_SCOPES || 'offline_access User.Read Mail.Read Mail.ReadWrite Mail.Send Calendars.Read Calendars.ReadWrite Files.Read Files.ReadWrite').split(' ');
+    const resolvedTokenEndpoint = process.env.M365_TOKEN_ENDPOINT || 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+
     this.config = {
       tokenStorePath: path.join(process.env.HOME || process.env.USERPROFILE, '.outlook-mcp-tokens.json'),
-      clientId: process.env.MS_CLIENT_ID,
-      clientSecret: process.env.MS_CLIENT_SECRET,
-      redirectUri: process.env.MS_REDIRECT_URI || 'http://localhost:3333/auth/callback',
-      scopes: (process.env.MS_SCOPES || 'offline_access User.Read Mail.Read').split(' '),
-      tokenEndpoint: process.env.MS_TOKEN_ENDPOINT || 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+      clientId: resolvedClientId,
+      clientSecret: resolvedClientSecret,
+      redirectUri: resolvedRedirectUri,
+      scopes: resolvedScopes,
+      tokenEndpoint: resolvedTokenEndpoint,
       refreshTokenBuffer: 5 * 60 * 1000, // 5 minutes buffer for token refresh
       ...config // Allow overriding default config
     };
@@ -20,7 +26,7 @@ class TokenStorage {
     this._refreshPromise = null;
 
     if (!this.config.clientId || !this.config.clientSecret) {
-      console.warn("TokenStorage: MS_CLIENT_ID or MS_CLIENT_SECRET is not configured. Token operations might fail.");
+      console.warn("TokenStorage: M365_CLIENT_ID or M365_CLIENT_SECRET is not configured. Token operations might fail.");
     }
   }
 

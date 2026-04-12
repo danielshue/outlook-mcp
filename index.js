@@ -9,6 +9,7 @@
 const { Server } = require("@modelcontextprotocol/sdk/server/index.js");
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 const config = require('./config');
+const { stopAuthCallbackServer } = require('./auth/callback-server');
 
 // Import module tools
 const { authTools } = require('./auth');
@@ -137,9 +138,24 @@ server.fallbackRequestHandler = async (request) => {
   }
 };
 
-// Make the script executable
+async function shutdown(signal) {
+  console.error(`${signal} received, shutting down`);
+
+  try {
+    await stopAuthCallbackServer();
+  } catch (error) {
+    console.error(`Error while stopping auth callback server: ${error.message}`);
+  }
+
+  process.exit(0);
+}
+
 process.on('SIGTERM', () => {
-  console.error('SIGTERM received but staying alive');
+  shutdown('SIGTERM');
+});
+
+process.on('SIGINT', () => {
+  shutdown('SIGINT');
 });
 
 // Start the server

@@ -3,6 +3,7 @@
  */
 const config = require('../config');
 const tokenManager = require('./token-manager');
+const { getAuthEntryUrl, startAuthCallbackServer } = require('./callback-server');
 
 /**
  * About tool handler
@@ -37,9 +38,29 @@ async function handleAuthenticate(args) {
       }]
     };
   }
+
+  if (!config.AUTH_CONFIG.clientId || !config.AUTH_CONFIG.clientSecret) {
+    return {
+      content: [{
+        type: "text",
+        text: 'Authentication is not configured. Set M365_CLIENT_ID and M365_CLIENT_SECRET and try again.'
+      }]
+    };
+  }
+
+  try {
+    await startAuthCallbackServer();
+  } catch (error) {
+    return {
+      content: [{
+        type: "text",
+        text: `Failed to start the local authentication callback server at ${config.AUTH_CONFIG.authServerUrl}: ${error.message}`
+      }]
+    };
+  }
   
   // For real authentication, generate an auth URL and instruct the user to visit it
-  const authUrl = `${config.AUTH_CONFIG.authServerUrl}/auth?client_id=${config.AUTH_CONFIG.clientId}`;
+  const authUrl = getAuthEntryUrl();
   
   return {
     content: [{

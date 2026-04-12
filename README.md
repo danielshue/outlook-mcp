@@ -124,9 +124,8 @@ A comprehensive MCP (Model Context Protocol) server that connects Claude with Mi
 2. **Azure setup**: Register app in Azure Portal (see detailed steps below)
 3. **Configure environment**: Copy `.env.example` to `.env` and add your Azure credentials
 4. **Configure Claude**: Update your Claude Desktop config with the server path
-5. **Start auth server**: `npm run auth-server`
-6. **Authenticate**: Use the authenticate tool in Claude to get the OAuth URL
-7. **Start using**: Access your M365 data through Claude!
+5. **Authenticate**: Use the authenticate tool in Claude to get the OAuth URL
+6. **Start using**: Access your M365 data through Claude!
 
 ## Installation
 
@@ -187,8 +186,8 @@ cp .env.example .env
 
 Edit `.env`:
 ```bash
-MS_CLIENT_ID=your-application-client-id
-MS_CLIENT_SECRET=your-client-secret-VALUE
+M365_CLIENT_ID=your-application-client-id
+M365_CLIENT_SECRET=your-client-secret-VALUE
 USE_TEST_MODE=false
 ```
 
@@ -204,8 +203,8 @@ Add to your Claude Desktop config:
       "args": ["/path/to/outlook-mcp/index.js"],
       "env": {
         "USE_TEST_MODE": "false",
-        "OUTLOOK_CLIENT_ID": "your-client-id",
-        "OUTLOOK_CLIENT_SECRET": "your-client-secret"
+        "M365_CLIENT_ID": "your-client-id",
+        "M365_CLIENT_SECRET": "your-client-secret"
       }
     }
   }
@@ -216,10 +215,10 @@ Add to your Claude Desktop config:
 
 ### Graph API (Outlook + OneDrive)
 
-1. Start auth server: `npm run auth-server`
-2. Use the `authenticate` tool in Claude
+1. Start the MCP server
+2. Use the `authenticate` tool
 3. Visit the provided URL and sign in
-4. Tokens saved to `~/.outlook-mcp-tokens.json`
+4. The MCP process handles the OAuth callback locally and saves tokens to `~/.outlook-mcp-tokens.json`
 
 ### Power Automate (Optional)
 
@@ -242,7 +241,7 @@ npm install
 **"Port 3333 in use"**
 ```bash
 npx kill-port 3333
-npm run auth-server
+npm start
 ```
 
 **"Invalid client secret" (AADSTS7000215)**

@@ -6,7 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `npm install` - **ALWAYS run first** to install dependencies
 - `npm start` - Start the MCP server
-- `npm run auth-server` - Start the OAuth authentication server on port 3333 (**required for authentication**)
 - `npm run test-mode` - Start the server in test mode with mock data
 - `npm run inspect` - Use MCP Inspector to test the server interactively
 - `npm test` - Run Jest tests
@@ -22,7 +21,6 @@ This is a modular MCP (Model Context Protocol) server that provides Claude with 
 ### Core Structure
 - `index.js` - Main entry point that combines all module tools and handles MCP protocol
 - `config.js` - Centralized configuration (API endpoints, scopes, field selections)
-- `outlook-auth-server.js` - Standalone OAuth server for authentication flow
 
 ### Modules
 Each module exports tools and handlers:
@@ -50,10 +48,9 @@ Each module exports tools and handlers:
    - `Calendars.Read`, `Calendars.ReadWrite`
    - `Files.Read`, `Files.ReadWrite`
    - `User.Read`, `offline_access`
-2. Start auth server: `npm run auth-server`
-3. Use authenticate tool to get OAuth URL
-4. Complete browser authentication
-5. Tokens automatically stored and refreshed
+2. Start the MCP server and use the authenticate tool to get the OAuth URL
+3. Complete browser authentication
+4. Tokens automatically stored and refreshed
 
 ### Power Automate (Optional)
 - Requires separate Flow API scope: `https://service.flow.microsoft.com//.default`
@@ -64,8 +61,7 @@ Each module exports tools and handlers:
 ## Configuration
 
 ### Environment Variables
-- **For .env file**: Use `MS_CLIENT_ID` and `MS_CLIENT_SECRET`
-- **For Claude Desktop config**: Use `OUTLOOK_CLIENT_ID` and `OUTLOOK_CLIENT_SECRET`
+- Use `M365_CLIENT_ID` and `M365_CLIENT_SECRET`
 - **Important**: Always use the client secret VALUE from Azure, not the Secret ID
 
 ### Config Constants
@@ -77,7 +73,7 @@ Each module exports tools and handlers:
 ### Common Setup Issues
 1. **Missing dependencies**: Always run `npm install` first
 2. **Wrong secret**: Use Azure secret VALUE, not ID (AADSTS7000215 error)
-3. **Auth server not running**: Start `npm run auth-server` before authenticating
+3. **Callback listener unavailable**: Start the MCP server and re-run `authenticate`
 4. **Port conflicts**: Use `npx kill-port 3333` if port is in use
 
 ## Test Mode
